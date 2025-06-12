@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "764384663777",
+    "project_id": "logindb-212e9",
+    "storage_bucket": "logindb-212e9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:764384663777:android:0e33ab494b8adf08a37fa0",
+        "android_client_info": {
+          "package_name": "com.uoc.fot.ict.loginandregistration"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC6VVnm2wOXuHos0wYiK-pvO4J_gclJ6wo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
