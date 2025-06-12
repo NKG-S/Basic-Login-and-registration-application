@@ -18,11 +18,18 @@ import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FieldValue;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class Registration extends AppCompatActivity {
 
     private static final String TAG = "EmailPassword";
     private FirebaseAuth mAuth;  // FirebaseAuth instance
+    private FirebaseFirestore db;  // Firestore instance
+
     private TextInputEditText nameEditText, emailEditText, passwordEditText, addressEditText, mobileEditText;
     private MaterialButton registerButton;
     private TextView signInTextView;
@@ -30,11 +37,12 @@ public class Registration extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);  // Only one call to super.onCreate()
+        super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_registration);
 
-        // Initialize Firebase Auth
+        // Initialize Firebase instances
         mAuth = FirebaseAuth.getInstance();
+        db = FirebaseFirestore.getInstance();  // Initialize Firestore
 
         // Initialize views
         nameEditText = findViewById(R.id.nameEditText);
@@ -76,7 +84,7 @@ public class Registration extends AppCompatActivity {
             if (!passwordValidationResult.equals("Password is valid")) {
                 Toast.makeText(Registration.this, passwordValidationResult, Toast.LENGTH_SHORT).show();
             } else {
-                createAccount(email, password);  // Pass email and password correctly
+                createAccount(email, password, name, address, mobile);  // Pass email, password, and user info correctly
             }
         }
     }
@@ -84,7 +92,7 @@ public class Registration extends AppCompatActivity {
     // Password validation logic: check for minimum length and complexity requirements
     private String isPasswordValid(String password) {
         // Check each condition and return corresponding message for missing requirements
-        if (password.length() < 6) {
+        if (password.length() < 8) {
             return "Password must be at least 6 characters long.";
         } else if (!password.matches(".*[a-z].*")) {
             return "Password must contain at least one lowercase letter.";
@@ -100,25 +108,46 @@ public class Registration extends AppCompatActivity {
         return "Password is valid";
     }
 
-    private void createAccount(String email, String password) {
-        // [START create_user_with_email]
+    // Method to create a user and save additional data to Firestore
+    private void createAccount(String email, String password, String name, String address, String mobile) {
+        // Create Firebase Authentication account
         mAuth.createUserWithEmailAndPassword(email, password)
-                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
-                    @Override
-                    public void onComplete(@NonNull Task<AuthResult> task) {
-                        if (task.isSuccessful()) {
-                            progressBar.setVisibility(View.GONE);
-                            // Sign in success, update UI with the signed-in user's information
-                            Log.d(TAG, "createUserWithEmail:success");
-                            FirebaseUser user = mAuth.getCurrentUser();
-                        } else {
-                            // If sign in fails, display a message to the user.
-                            Log.w(TAG, "createUserWithEmail:failure", task.getException());
-                            Toast.makeText(Registration.this, "Authentication failed.",
-                                    Toast.LENGTH_SHORT).show();
+                .addOnCompleteListener(this, task -> {
+                    progressBar.setVisibility(View.GONE);
+
+                    if (task.isSuccessful()) {
+                        Log.d(TAG, "createUserWithEmail:success");
+                        FirebaseUser user = mAuth.getCurrentUser();
+
+                        // Create a map of user data to save in Firestore
+                        Map<String, Object> userData = new HashMap<>();
+                        userData.put("name", name);
+                        userData.put("email", email);
+                        userData.put("address", address);
+                        userData.put("mobile", mobile);
+                        userData.put("createdAt", FieldValue.serverTimestamp());
+
+                        // Save user data to Firestore
+                        if (user != null) {
+                            db.collection("users").document(user.getUid())
+                                    .set(userData)
+                                    .addOnSuccessListener(aVoid -> {
+                                        Log.d(TAG, "User data successfully written!");
+                                        Toast.makeText(Registration.this, "Registration successful", Toast.LENGTH_SHORT).show();
+                                        // Redirect to main activity or login
+                                        startActivity(new Intent(Registration.this, MainActivity.class));
+                                        finish();
+                                    })
+                                    .addOnFailureListener(e -> {
+                                        Log.w(TAG, "Error writing user data", e);
+                                        Toast.makeText(Registration.this, "Registration successful but failed to save profile data", Toast.LENGTH_SHORT).show();
+                                    });
                         }
+                    } else {
+                        Log.w(TAG, "createUserWithEmail:failure", task.getException());
+                        Toast.makeText(Registration.this, "Authentication failed: " +
+                                task.getException().getMessage(), Toast.LENGTH_SHORT).show();
                     }
                 });
-        // [END create_user_with_email]
     }
 }
