@@ -1,6 +1,5 @@
-package com.uoc.fot.ict.loginandregistration;  // Keep only this package declaration
+package com.uoc.fot.ict.loginandregistration;
 
-import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -49,11 +48,8 @@ public class Registration extends AppCompatActivity {
 
         // Register button click listener
         registerButton.setOnClickListener(v -> {
-
             progressBar.setVisibility(View.VISIBLE);
-
             setRegisterButton();
-
         });
 
         // Sign in click listener
@@ -74,18 +70,34 @@ public class Registration extends AppCompatActivity {
         if (name.isEmpty() || email.isEmpty() || password.isEmpty() || address.isEmpty() || mobile.isEmpty()) {
             Toast.makeText(Registration.this, "Please fill all fields", Toast.LENGTH_SHORT).show();
         } else {
+            // Check if password meets complexity requirements
+            String passwordValidationResult = isPasswordValid(password);
 
-
-            createAccount(email, password);  // Pass email and password correctly
-
-
-            Toast.makeText(Registration.this, "Registration successful", Toast.LENGTH_SHORT).show();
-
-            // In a real app, you would save the user data here
-            Intent intent = new Intent(Registration.this, Login.class);
-            startActivity(intent);
-            finish();
+            if (!passwordValidationResult.equals("Password is valid")) {
+                Toast.makeText(Registration.this, passwordValidationResult, Toast.LENGTH_SHORT).show();
+            } else {
+                createAccount(email, password);  // Pass email and password correctly
+            }
         }
+    }
+
+    // Password validation logic: check for minimum length and complexity requirements
+    private String isPasswordValid(String password) {
+        // Check each condition and return corresponding message for missing requirements
+        if (password.length() < 6) {
+            return "Password must be at least 6 characters long.";
+        } else if (!password.matches(".*[a-z].*")) {
+            return "Password must contain at least one lowercase letter.";
+        } else if (!password.matches(".*[A-Z].*")) {
+            return "Password must contain at least one uppercase letter.";
+        } else if (!password.matches(".*[0-9].*")) {
+            return "Password must contain at least one digit.";
+        } else if (!password.matches(".*[!@#$%^&*(),.?\":{}|<>].*")) {
+            return "Password must contain at least one special character.";
+        }
+
+        // If all conditions are satisfied
+        return "Password is valid";
     }
 
     private void createAccount(String email, String password) {
@@ -95,16 +107,11 @@ public class Registration extends AppCompatActivity {
                     @Override
                     public void onComplete(@NonNull Task<AuthResult> task) {
                         if (task.isSuccessful()) {
-
                             progressBar.setVisibility(View.GONE);
-
                             // Sign in success, update UI with the signed-in user's information
                             Log.d(TAG, "createUserWithEmail:success");
                             FirebaseUser user = mAuth.getCurrentUser();
                         } else {
-
-
-
                             // If sign in fails, display a message to the user.
                             Log.w(TAG, "createUserWithEmail:failure", task.getException());
                             Toast.makeText(Registration.this, "Authentication failed.",
@@ -115,4 +122,3 @@ public class Registration extends AppCompatActivity {
         // [END create_user_with_email]
     }
 }
-
